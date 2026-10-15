@@ -67,6 +67,20 @@ class VoiceEnrollmentActivity : AppCompatActivity() {
         // Trigger Vosk initialization in background if not already started
         VoskModelManager.init(applicationContext, lifecycleScope)
 
+        lifecycleScope.launch {
+            VoskModelManager.isModelReady.collect { isReady ->
+                if (!isReady && VoskModelManager.model == null) {
+                    binding.btnRecordSample.isEnabled = false
+                    binding.tvRecordFeedback.text = "Initializing speech engine... Please wait a few seconds."
+                } else {
+                    binding.btnRecordSample.isEnabled = true
+                    if (binding.tvRecordFeedback.text.toString().contains("Initializing speech")) {
+                        updateEnrollmentStepUI()
+                    }
+                }
+            }
+        }
+
         setupUI()
         setupListeners()
         checkPermissions()
@@ -221,6 +235,22 @@ class VoiceEnrollmentActivity : AppCompatActivity() {
             return
         }
 
+        // Check if audio has energy (not silence/zeros)
+        var maxAmp = 0
+        for (i in 0 until pcmAudio.size - 1 step 2) {
+            val sample = ((pcmAudio[i + 1].toInt() shl 8) or (pcmAudio[i].toInt() and 0xFF)).toShort()
+            val abs = kotlin.math.abs(sample.toInt())
+            if (abs > maxAmp) maxAmp = abs
+        }
+
+        if (maxAmp < 150) {
+            binding.btnRecordSample.isEnabled = true
+            binding.btnRecordSample.setBackgroundColor(getColor(R.color.primary_cyan))
+            binding.tvRecordFeedback.text = "Microphone recorded silence. Please ensure microphone permission is allowed and speak closer to the phone."
+            binding.btnRecordSample.text = "RETRY SAMPLE ${currentSampleIndex + 1}"
+            return
+        }
+
         binding.btnRecordSample.isEnabled = false
         binding.tvRecordFeedback.text = "Analyzing vocal acoustic signature..."
 
@@ -339,16 +369,26 @@ class VoiceEnrollmentActivity : AppCompatActivity() {
             val bufferSize = maxOf(minBufSize * 2, 32000)
 
             try {
-                val record = AudioRecord(
-                    MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-                    sampleRate,
-                    channelConfig,
-                    audioFormat,
-                    bufferSize
+                val sources = intArrayOf(
+                    MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                    MediaRecorder.AudioSource.MIC,
+                    MediaRecorder.AudioSource.VOICE_COMMUNICATION
                 )
+                var record: AudioRecord? = null
+                for (source in sources) {
+                    try {
+                        val r = AudioRecord(source, sampleRate, channelConfig, audioFormat, bufferSize)
+                        if (r.state == AudioRecord.STATE_INITIALIZED) {
+                            record = r
+                            break
+                        } else {
+                            r.release()
+                        }
+                    } catch (_: Exception) {}
+                }
 
-                if (record.state != AudioRecord.STATE_INITIALIZED) {
-                    record.release()
+                if (record == null || record.state != AudioRecord.STATE_INITIALIZED) {
+                    record?.release()
                     return@launch
                 }
 
