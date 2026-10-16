@@ -52,10 +52,10 @@ object CommandParser {
 
         // 1. Confirmations & Cancellations (Priority when awaiting confirmation)
         if (isAwaitingConfirmation) {
-            if (clean.matches(Regex("^(yes|yeah|yup|send|send it|confirm|do it|sure|okay|go ahead|please send|haan|haanji|kardo|theek hai|avunu|sare|chey|aamaa|sari|ho|thik ache|thik ahe|kar da|kar do).*"))) {
+            if (clean.matches(Regex("^(yes|yeah|yup|send|send it|confirm|do it|sure|okay|go ahead|please send|haan|haanji|kardo|theek hai|avunu|sare|chey|aamaa|sari|ho|thik ache|thik ahe|kar da|kar do|haudu|maadu|aaytu|kaluhisu|haaku).*"))) {
                 return ParsedCommandResult(JarvisCommand.ConfirmAction(true), 1.0f, "CONFIRM")
             }
-            if (clean.matches(Regex("^(no|nope|cancel|don't|dont|never mind|stop|abort|nahi|mat karo|ruko|vaddu|oddu|vendaam|nako|thamba|naahi|mat kara).*"))) {
+            if (clean.matches(Regex("^(no|nope|cancel|don't|dont|never mind|stop|abort|nahi|mat karo|ruko|vaddu|oddu|vendaam|nako|thamba|naahi|mat kara|beda|illa|nillisu).*"))) {
                 return ParsedCommandResult(JarvisCommand.ConfirmAction(false), 1.0f, "CANCEL")
             }
         }
@@ -67,18 +67,33 @@ object CommandParser {
 
         val prefix = "^(?:please\\s+|can you\\s+|could you\\s+|just\\s+)?"
 
+        // 2b. Developer & Creator Queries (Mahesh Sir @_mahesh_356)
+        if (clean.matches(Regex("$prefix(?:who\\s+is\\s+(?:your\\s+)?(?:developer|creator|owner|boss)|who\\s+(?:developed|created|made)\\s+you|developer\\s+yaaru|ninnanna\\s+yaaru\\s+maadiddu|nanna\\s+developer\\s+yaaru|tumhe\\s+kisne\\s+banaya|aapko\\s+kisne\\s+banaya)$")) ||
+            clean.matches(Regex(".*(?:developer\\s+yaaru|ninnanna\\s+yaaru\\s+maadiddu|who\\s+is\\s+your\\s+developer|who\\s+is\\s+developer).*"))
+        ) {
+            return ParsedCommandResult(JarvisCommand.ShowDeveloperInfo, 1.0f, "DEVELOPER_INFO")
+        }
+
+        // 2c. Open Mahesh Sir Instagram Profile
+        if (clean.matches(Regex("$prefix(?:open\\s+)?(?:mahesh\\s+sir(?:'s)?\\s+)?instagram(?:\\s+profile)?$")) ||
+            clean.matches(Regex(".*(?:mahesh\\s+sir(?:'s)?\\s+insta|developer(?:'s)?\\s+insta|developer(?:'s)?\\s+instagram|open\\s+mahesh\\s+instagram).*")) ||
+            clean.matches(Regex(".*@?_mahesh_356.*"))
+        ) {
+            return ParsedCommandResult(JarvisCommand.OpenInstagramProfile("_mahesh_356"), 1.0f, "OPEN_MAHESH_INSTAGRAM")
+        }
+
         // 3. Flashlight / Torch Commands (Strict Anchoring & Natural Variations across Indian languages)
         val flashWords = "(?:flash\\s*light|flash\\s*lite|flashlight|flash|torch|light|batti)"
         if (clean.matches(Regex("$prefix(?:turn\\s+on|open|enable|switch\\s+on)\\s+(?:the\\s+)?$flashWords$")) ||
             clean.matches(Regex("$prefix(?:turn|switch)\\s+(?:the\\s+)?$flashWords\\s+on$")) ||
-            clean.matches(Regex("$prefix$flashWords\\s+(?:on|chalu|jalao|chalu\\s+karo|chalu\\s+kar\\s+do|on\\s+karo|on\\s+chey|on\\s+pannu|jwalao|chalu\\s+kara|jara)$")) ||
+            clean.matches(Regex("$prefix$flashWords\\s+(?:on|chalu|jalao|chalu\\s+karo|chalu\\s+kar\\s+do|on\\s+karo|on\\s+chey|on\\s+pannu|jwalao|chalu\\s+kara|jara|on\\s+maadu|hachhu|haaku)$")) ||
             clean.matches(Regex("$prefix(?:turn\\s+torch\\s+on|turn\\s+$flashWords\\s+on)$"))
         ) {
             return ParsedCommandResult(JarvisCommand.Flash(true), 0.98f, "FLASH_ON")
         }
         if (clean.matches(Regex("$prefix(?:turn\\s+off|close|disable|switch\\s+off)\\s+(?:the\\s+)?$flashWords$")) ||
             clean.matches(Regex("$prefix(?:turn|switch)\\s+(?:the\\s+)?$flashWords\\s+off$")) ||
-            clean.matches(Regex("$prefix$flashWords\\s+(?:off|band|bujhao|band\\s+karo|band\\s+kar\\s+do|off\\s+karo|off\\s+chey|off\\s+pannu|nibhao|band\\s+kara|buta)$")) ||
+            clean.matches(Regex("$prefix$flashWords\\s+(?:off|band|bujhao|band\\s+karo|band\\s+kar\\s+do|off\\s+karo|off\\s+chey|off\\s+pannu|nibhao|band\\s+kara|buta|off\\s+maadu|nandhisu|aarisu)$")) ||
             clean.matches(Regex("$prefix(?:turn\\s+torch\\s+off|turn\\s+$flashWords\\s+off)$"))
         ) {
             return ParsedCommandResult(JarvisCommand.Flash(false), 0.98f, "FLASH_OFF")

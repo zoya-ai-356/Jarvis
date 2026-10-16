@@ -841,4 +841,29 @@ class PhoneControlManager(
         }
         return cost[lhs.length]
     }
+
+    fun openInstagramProfile(username: String = "_mahesh_356"): String {
+        return try {
+            val uri = Uri.parse("http://instagram.com/_u/$username")
+            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                setPackage("com.instagram.android")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            if (intent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(intent)
+            } else {
+                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/$username")).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(webIntent)
+            }
+            "Opened Mahesh Sir's Instagram profile (@$username)."
+        } catch (e: Exception) {
+            val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/$username")).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(webIntent)
+            "Opened Mahesh Sir's Instagram profile (@$username)."
+        }
+    }
 }

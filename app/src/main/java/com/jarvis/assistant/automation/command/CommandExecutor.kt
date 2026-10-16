@@ -77,6 +77,8 @@ class CommandExecutor(
             is JarvisCommand.RecallFavoriteSong -> memoryManager.getFavoriteSongResponse()
             is JarvisCommand.RecallRoutine -> memoryManager.getRoutineResponse()
             is JarvisCommand.GoToBackground -> "Going to background."
+            is JarvisCommand.OpenInstagramProfile -> phoneManager.openInstagramProfile(command.username)
+            is JarvisCommand.ShowDeveloperInfo -> "I was created and developed by Mahesh Sir! His Instagram ID is @_mahesh_356."
         }
     }
 }

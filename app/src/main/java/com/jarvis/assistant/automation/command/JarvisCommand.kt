@@ -28,4 +28,6 @@ sealed class JarvisCommand {
     object RecallFavoriteSong : JarvisCommand()
     object RecallRoutine : JarvisCommand()
     object GoToBackground : JarvisCommand()
+    data class OpenInstagramProfile(val username: String = "_mahesh_356") : JarvisCommand()
+    object ShowDeveloperInfo : JarvisCommand()
 }

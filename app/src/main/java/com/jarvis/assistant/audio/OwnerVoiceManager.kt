@@ -95,51 +95,10 @@ object OwnerVoiceManager {
     }
 
     /**
-     * Boosts low-amplitude PCM audio to normal speaking volume to ensure Kaldi detects acoustic features.
-     */
-    fun normalizePcm(pcm: ByteArray): ByteArray {
-        if (pcm.size < 2) return pcm
-        var maxPeak = 0
-        for (i in 0 until pcm.size - 1 step 2) {
-            val sample = ((pcm[i + 1].toInt() shl 8) or (pcm[i].toInt() and 0xFF)).toShort()
-            val abs = kotlin.math.abs(sample.toInt())
-            if (abs > maxPeak) maxPeak = abs
-        }
-        if (maxPeak in 100..12000) {
-            val gain = minOf(4.0f, 22000.0f / maxPeak)
-            val boosted = ByteArray(pcm.size)
-            for (i in 0 until pcm.size - 1 step 2) {
-                val sample = ((pcm[i + 1].toInt() shl 8) or (pcm[i].toInt() and 0xFF)).toShort()
-                val newSample = (sample * gain).toInt().coerceIn(-32768, 32767).toShort()
-                boosted[i] = (newSample.toInt() and 0xFF).toByte()
-                boosted[i + 1] = ((newSample.toInt() shr 8) and 0xFF).toByte()
-            }
-            return boosted
-        }
-        return pcm
-    }
-
-    /**
      * Extracts a speaker embedding vector (x-vector) from a 16kHz mono 16-bit PCM audio buffer.
      */
     @Synchronized
     fun extractSpeakerVector(pcmAudio: ByteArray): FloatArray? {
-        if (pcmAudio.size < 3200) { // Require at least 100ms of audio (16000 * 2 * 0.1)
-            Log.w(TAG, "Audio buffer too short for speaker extraction (${pcmAudio.size} bytes)")
-            return null
-        }
-
-        // Wait up to 5 seconds if models are still unpacking/initializing
-        if (VoskModelManager.model == null || VoskModelManager.speakerModel == null) {
-            var retries = 50
-            while ((VoskModelManager.model == null || VoskModelManager.speakerModel == null) && retries > 0) {
-                try {
-                    Thread.sleep(100)
-                } catch (_: InterruptedException) {}
-                retries--
-            }
-        }
-
         val model = VoskModelManager.model
         val spkModel = VoskModelManager.speakerModel
 
@@ -147,8 +106,10 @@ object OwnerVoiceManager {
             Log.w(TAG, "Cannot extract speaker vector: Vosk model or speaker model is not ready")
             return null
         }
-
-        val normalizedAudio = normalizePcm(pcmAudio)
+        if (pcmAudio.size < 3200) { // Require at least 100ms of audio (16000 * 2 * 0.1)
+            Log.w(TAG, "Audio buffer too short for speaker extraction (${pcmAudio.size} bytes)")
+            return null
+        }
 
         var rec: Recognizer? = null
         return try {
@@ -157,9 +118,9 @@ object OwnerVoiceManager {
             // Feed audio in clean 4096-byte blocks so Kaldi's acoustic and x-vector pipeline processes all frames
             var offset = 0
             val chunkSize = 4096
-            while (offset < normalizedAudio.size) {
-                val len = minOf(chunkSize, normalizedAudio.size - offset)
-                rec.acceptWaveForm(normalizedAudio.copyOfRange(offset, offset + len), len)
+            while (offset < pcmAudio.size) {
+                val len = minOf(chunkSize, pcmAudio.size - offset)
+                rec.acceptWaveForm(pcmAudio.copyOfRange(offset, offset + len), len)
                 offset += len
             }
 

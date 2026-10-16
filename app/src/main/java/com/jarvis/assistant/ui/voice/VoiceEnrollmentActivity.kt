@@ -67,20 +67,6 @@ class VoiceEnrollmentActivity : AppCompatActivity() {
         // Trigger Vosk initialization in background if not already started
         VoskModelManager.init(applicationContext, lifecycleScope)
 
-        lifecycleScope.launch {
-            VoskModelManager.isModelReady.collect { isReady ->
-                if (!isReady && VoskModelManager.model == null) {
-                    binding.btnRecordSample.isEnabled = false
-                    binding.tvRecordFeedback.text = "Initializing speech engine... Please wait a few seconds."
-                } else {
-                    binding.btnRecordSample.isEnabled = true
-                    if (binding.tvRecordFeedback.text.toString().contains("Initializing speech")) {
-                        updateEnrollmentStepUI()
-                    }
-                }
-            }
-        }
-
         setupUI()
         setupListeners()
         checkPermissions()
@@ -231,22 +217,6 @@ class VoiceEnrollmentActivity : AppCompatActivity() {
             binding.btnRecordSample.isEnabled = true
             binding.btnRecordSample.setBackgroundColor(getColor(R.color.primary_cyan))
             binding.tvRecordFeedback.text = "Recording was too short. Please speak the full phrase and tap Stop."
-            binding.btnRecordSample.text = "RETRY SAMPLE ${currentSampleIndex + 1}"
-            return
-        }
-
-        // Check if audio has energy (not silence/zeros)
-        var maxAmp = 0
-        for (i in 0 until pcmAudio.size - 1 step 2) {
-            val sample = ((pcmAudio[i + 1].toInt() shl 8) or (pcmAudio[i].toInt() and 0xFF)).toShort()
-            val abs = kotlin.math.abs(sample.toInt())
-            if (abs > maxAmp) maxAmp = abs
-        }
-
-        if (maxAmp < 150) {
-            binding.btnRecordSample.isEnabled = true
-            binding.btnRecordSample.setBackgroundColor(getColor(R.color.primary_cyan))
-            binding.tvRecordFeedback.text = "Microphone recorded silence. Please ensure microphone permission is allowed and speak closer to the phone."
             binding.btnRecordSample.text = "RETRY SAMPLE ${currentSampleIndex + 1}"
             return
         }

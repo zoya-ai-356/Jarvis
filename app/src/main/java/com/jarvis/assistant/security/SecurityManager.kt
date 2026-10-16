@@ -9,16 +9,16 @@ import kotlin.system.exitProcess
 
 /**
  * JARVIS ASSISTANT — SECURITY MODULE
- * Developer       : Tech GPTx
- * Copyright © 2026: Tech GPTx. All Rights Reserved.
- * GitHub          : https://github.com/techgptx/Playlist
+ * Developer       : Mahesh Sir (@_mahesh_356)
+ * Copyright © 2026: Mahesh Sir. All Rights Reserved.
+ * GitHub          : https://github.com/zoya-ai-356/Jarvis
  */
 object SecurityManager {
 
-    const val DEVELOPER_NAME    = "Tech GPTx"
-    const val COPYRIGHT_NOTICE  = "Copyright © 2026 Tech GPTx. All Rights Reserved."
-    const val GITHUB_REPO       = "https://github.com/techgptx/Playlist"
-    const val LICENSE_NAME      = "TAMCL v1.0 — Content creators MUST credit Tech GPTx"
+    const val DEVELOPER_NAME    = "Mahesh Sir"
+    const val COPYRIGHT_NOTICE  = "Copyright © 2026 Mahesh Sir. All Rights Reserved."
+    const val GITHUB_REPO       = "https://github.com/zoya-ai-356/Jarvis"
+    const val INSTAGRAM_HANDLE  = "@_mahesh_356"
 
     private const val EXPECTED_PACKAGE = "com.jarvis.assistant"
 
