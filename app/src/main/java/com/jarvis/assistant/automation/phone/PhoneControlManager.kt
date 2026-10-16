@@ -21,6 +21,10 @@ import com.jarvis.assistant.automation.contacts.ContactResolver
 import com.jarvis.assistant.util.ActivityLauncherHelper
 import kotlinx.coroutines.delay
 import java.net.URLEncoder
+import android.content.IntentFilter
+import android.os.BatteryManager
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -865,5 +869,93 @@ class PhoneControlManager(
             context.startActivity(webIntent)
             "Opened Mahesh Sir's Instagram profile (@$username)."
         }
+    }
+
+    @Volatile
+    var isDriveModeActive: Boolean = false
+        private set
+
+    fun getBatteryStatus(): String {
+        return try {
+            val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+            val batteryLevel = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+            val iFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+            val batteryStatus = context.registerReceiver(null, iFilter)
+            val status = batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+            val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                    status == BatteryManager.BATTERY_STATUS_FULL
+            val chargePlug = batteryStatus?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1
+            val plugType = when (chargePlug) {
+                BatteryManager.BATTERY_PLUGGED_AC -> "AC charger"
+                BatteryManager.BATTERY_PLUGGED_USB -> "USB"
+                BatteryManager.BATTERY_PLUGGED_WIRELESS -> "Wireless charger"
+                else -> "Not plugged in"
+            }
+
+            if (batteryLevel >= 0) {
+                if (isCharging) {
+                    "Mahesh Sir, battery is at $batteryLevel% and currently charging via $plugType."
+                } else {
+                    val tip = if (batteryLevel <= 20) " (Battery is running low, please connect a charger soon!)" else ""
+                    "Mahesh Sir, battery is at $batteryLevel%.$tip"
+                }
+            } else {
+                "Battery information is currently unavailable."
+            }
+        } catch (e: Exception) {
+            "Unable to read battery status: ${e.message}"
+        }
+    }
+
+    suspend fun getMorningBriefing(): String {
+        val calendar = Calendar.getInstance()
+        val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        val dateFormat = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
+        val currentTime = timeFormat.format(calendar.time)
+        val currentDate = dateFormat.format(calendar.time)
+
+        val weather = try {
+            com.jarvis.assistant.util.LocationWeatherHelper.fetchWeather(context)
+        } catch (_: Exception) { null }
+
+        val weatherStr = if (weather != null) {
+            "In ${weather.cityName}, it is ${weather.temperature} and ${weather.condition}."
+        } else {
+            "Weather information is being refreshed."
+        }
+
+        val batteryStr = getBatteryStatus()
+        return "Good morning Mahesh Sir! Today is $currentDate, time is $currentTime. $weatherStr $batteryStr Ready for your instructions!"
+    }
+
+    fun toggleDriveMode(enable: Boolean): String {
+        isDriveModeActive = enable
+        return if (enable) {
+            setVolumePercent(90)
+            "Drive Mode activated, Mahesh Sir! Media volume is set to 90% for clear hands-free navigation. Drive safe!"
+        } else {
+            setVolumePercent(60)
+            "Drive Mode turned off, Mahesh Sir. Normal audio level restored."
+        }
+    }
+
+    fun openCameraForVision(): String {
+        return try {
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            if (intent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(intent)
+                "Opening camera for visual scanning, Mahesh Sir."
+            } else {
+                openApp("camera")
+            }
+        } catch (_: Exception) {
+            openApp("camera")
+        }
+    }
+
+    fun getDeveloperInfo(): String {
+        return "I was created and developed by Mahesh Sir! His Instagram handle is @_mahesh_356."
     }
 }

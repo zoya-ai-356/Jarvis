@@ -643,7 +643,61 @@ class GeminiLiveWebSocket(
                             })
                         })
 
+                        // 22. get_battery_status
+                        put(JSONObject().apply {
+                            put("name", "get_battery_status")
+                            put("description", "Checks current phone battery percentage and charging state.")
+                            put("parameters", JSONObject().apply {
+                                put("type", "OBJECT")
+                                put("properties", JSONObject())
+                            })
+                        })
 
+                        // 23. get_morning_briefing
+                        put(JSONObject().apply {
+                            put("name", "get_morning_briefing")
+                            put("description", "Provides day briefing including current time, date, local weather, and phone battery level.")
+                            put("parameters", JSONObject().apply {
+                                put("type", "OBJECT")
+                                put("properties", JSONObject())
+                            })
+                        })
+
+                        // 24. toggle_drive_mode
+                        put(JSONObject().apply {
+                            put("name", "toggle_drive_mode")
+                            put("description", "Enables or disables hands-free drive mode for driving in a car or bike.")
+                            put("parameters", JSONObject().apply {
+                                put("type", "OBJECT")
+                                put("properties", JSONObject().apply {
+                                    put("enable", JSONObject().apply {
+                                        put("type", "BOOLEAN")
+                                        put("description", "True to activate drive mode, false to deactivate.")
+                                    })
+                                })
+                                put("required", JSONArray().put("enable"))
+                            })
+                        })
+
+                        // 25. open_camera
+                        put(JSONObject().apply {
+                            put("name", "open_camera")
+                            put("description", "Opens camera or visual scanner to capture and look at the surroundings or document.")
+                            put("parameters", JSONObject().apply {
+                                put("type", "OBJECT")
+                                put("properties", JSONObject())
+                            })
+                        })
+
+                        // 26. show_developer_info
+                        put(JSONObject().apply {
+                            put("name", "show_developer_info")
+                            put("description", "Returns verified developer info declaring Mahesh Sir as developer and his Instagram ID @_mahesh_356.")
+                            put("parameters", JSONObject().apply {
+                                put("type", "OBJECT")
+                                put("properties", JSONObject())
+                            })
+                        })
                     })
                 }))
             })

@@ -79,6 +79,10 @@ class CommandExecutor(
             is JarvisCommand.GoToBackground -> "Going to background."
             is JarvisCommand.OpenInstagramProfile -> phoneManager.openInstagramProfile(command.username)
             is JarvisCommand.ShowDeveloperInfo -> "I was created and developed by Mahesh Sir! His Instagram ID is @_mahesh_356."
+            is JarvisCommand.CheckBattery -> phoneManager.getBatteryStatus()
+            is JarvisCommand.MorningBriefing -> phoneManager.getMorningBriefing()
+            is JarvisCommand.ToggleDriveMode -> phoneManager.toggleDriveMode(command.enable)
+            is JarvisCommand.ScanCamera -> phoneManager.openCameraForVision()
         }
     }
 }

@@ -489,11 +489,53 @@ class JarvisConversationService : Service() {
     private var isPendingWakeGreeting = false
     private var headsetAudioRouter: com.jarvis.assistant.audio.HeadsetAudioRouter? = null
 
+    private var lastBatteryLevelAlerted = -1
+    private var lastBatteryFullAlerted = false
+
+    private val smartBatteryReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_BATTERY_CHANGED) {
+                val level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
+                val scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)
+                val status = intent.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1)
+                val isCharging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
+                        status == android.os.BatteryManager.BATTERY_STATUS_FULL
+                val batteryPct = if (level >= 0 && scale > 0) (level * 100 / scale) else level
+
+                if (!isCharging && batteryPct in 1..20 && batteryPct != lastBatteryLevelAlerted) {
+                    lastBatteryLevelAlerted = batteryPct
+                    val alertText = "Mahesh Sir, battery is running low at $batteryPct percent. Please connect your charger!"
+                    Log.i("JarvisService", "Battery low alert triggered: $alertText")
+                    if (liveWebSocket?.isSessionReady() != true) {
+                        tts?.speak(alertText, TextToSpeech.QUEUE_ADD, null, "battery_alert")
+                    }
+                } else if (isCharging && batteryPct >= 100 && !lastBatteryFullAlerted) {
+                    lastBatteryFullAlerted = true
+                    val fullText = "Mahesh Sir, your phone is fully charged at 100 percent. You can disconnect your charger."
+                    Log.i("JarvisService", "Battery full alert triggered: $fullText")
+                    if (liveWebSocket?.isSessionReady() != true) {
+                        tts?.speak(fullText, TextToSpeech.QUEUE_ADD, null, "battery_full")
+                    }
+                } else if (batteryPct > 20) {
+                    lastBatteryLevelAlerted = -1
+                }
+                if (!isCharging) {
+                    lastBatteryFullAlerted = false
+                }
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         activeInstance = this
         createChannel()
         initTts()
+        try {
+            registerReceiver(smartBatteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        } catch (e: Exception) {
+            Log.w("JarvisService", "Could not register battery receiver: ${e.message}")
+        }
         headsetAudioRouter = com.jarvis.assistant.audio.HeadsetAudioRouter(applicationContext)
         taskProgressOverlay = com.jarvis.assistant.ui.agent.TaskProgressOverlay(this)
         taskProgressOverlayJob = serviceScope.launch(Dispatchers.Main.immediate) {
@@ -2303,6 +2345,40 @@ class JarvisConversationService : Service() {
                         result.put("message", "Screen inspected successfully.")
                     }
 
+                    "get_battery_status" -> {
+                        val status = app.phoneControlManager.getBatteryStatus()
+                        result.put("success", true)
+                        result.put("message", status)
+                        result.put("battery_status", status)
+                    }
+
+                    "get_morning_briefing" -> {
+                        val briefing = app.phoneControlManager.getMorningBriefing()
+                        result.put("success", true)
+                        result.put("message", briefing)
+                        result.put("briefing", briefing)
+                    }
+
+                    "toggle_drive_mode" -> {
+                        val enable = args.optBoolean("enable", true)
+                        val msg = app.phoneControlManager.toggleDriveMode(enable)
+                        result.put("success", true)
+                        result.put("message", msg)
+                    }
+
+                    "open_camera" -> {
+                        val msg = app.phoneControlManager.openCameraForVision()
+                        result.put("success", true)
+                        result.put("message", msg)
+                    }
+
+                    "show_developer_info" -> {
+                        val info = "I was created and developed by Mahesh Sir! His Instagram handle is @_mahesh_356."
+                        result.put("success", true)
+                        result.put("message", info)
+                        result.put("developer", "Mahesh Sir")
+                        result.put("instagram", "@_mahesh_356")
+                    }
 
                     else -> {
                         Log.w("JarvisService", "Unknown toolCall name: $name")
@@ -2828,6 +2904,9 @@ class JarvisConversationService : Service() {
                 val result = app.commandExecutor.execute(command)
                 Log.i("JarvisService", "Command executed successfully: $result (source: $source)")
                 app.memoryManager.addShortTermTurn(source, result)
+                if (liveWebSocket?.isSessionReady() != true && result.isNotBlank()) {
+                    tts?.speak(result, TextToSpeech.QUEUE_FLUSH, null, "command_feedback")
+                }
             } catch (e: Exception) {
                 Log.e("JarvisService", "Command execution FAILED: ${e.message}", e)
             }
@@ -3278,6 +3357,9 @@ class JarvisConversationService : Service() {
         } catch (_: Exception) {}
         voskSpeechService = null
         releaseWakeLock()
+        try {
+            unregisterReceiver(smartBatteryReceiver)
+        } catch (_: Exception) {}
         serviceScope.cancel()
         if (activeInstance === this) activeInstance = null
         super.onDestroy()

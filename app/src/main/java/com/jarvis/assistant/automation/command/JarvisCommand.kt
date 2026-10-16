@@ -30,4 +30,8 @@ sealed class JarvisCommand {
     object GoToBackground : JarvisCommand()
     data class OpenInstagramProfile(val username: String = "_mahesh_356") : JarvisCommand()
     object ShowDeveloperInfo : JarvisCommand()
+    object CheckBattery : JarvisCommand()
+    object MorningBriefing : JarvisCommand()
+    data class ToggleDriveMode(val enable: Boolean) : JarvisCommand()
+    data class ScanCamera(val mode: String = "general") : JarvisCommand()
 }

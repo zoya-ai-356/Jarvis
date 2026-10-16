@@ -68,18 +68,41 @@ object CommandParser {
         val prefix = "^(?:please\\s+|can you\\s+|could you\\s+|just\\s+)?"
 
         // 2b. Developer & Creator Queries (Mahesh Sir @_mahesh_356)
-        if (clean.matches(Regex("$prefix(?:who\\s+is\\s+(?:your\\s+)?(?:developer|creator|owner|boss)|who\\s+(?:developed|created|made)\\s+you|developer\\s+yaaru|ninnanna\\s+yaaru\\s+maadiddu|nanna\\s+developer\\s+yaaru|tumhe\\s+kisne\\s+banaya|aapko\\s+kisne\\s+banaya)$")) ||
-            clean.matches(Regex(".*(?:developer\\s+yaaru|ninnanna\\s+yaaru\\s+maadiddu|who\\s+is\\s+your\\s+developer|who\\s+is\\s+developer).*"))
+        if (clean.matches(Regex("$prefix(?:who\\s+is\\s+(?:your\\s+)?(?:developer|creator|owner|boss)|who\\s+(?:developed|created|made)\\s+you|developer\\s+yaaru|ninnanna\\s+yaaru\\s+maadiddu|nanna\\s+developer\\s+yaaru|tumhe\\s+kisne\\s+banaya|aapko\\s+kisne\\s+banaya|edar\\s+devalpa\\s+yaru|edara\\s+developer\\s+yaru|creator\\s+yaru|who\\s+made\\s+jarvis).*")) ||
+            clean.matches(Regex(".*(?:developer\\s+yaaru|ninnanna\\s+yaaru\\s+maadiddu|who\\s+is\\s+your\\s+developer|who\\s+is\\s+developer|devalpa\\s+yaru|developer\\s+yaru).*"))
         ) {
             return ParsedCommandResult(JarvisCommand.ShowDeveloperInfo, 1.0f, "DEVELOPER_INFO")
         }
 
         // 2c. Open Mahesh Sir Instagram Profile
         if (clean.matches(Regex("$prefix(?:open\\s+)?(?:mahesh\\s+sir(?:'s)?\\s+)?instagram(?:\\s+profile)?$")) ||
-            clean.matches(Regex(".*(?:mahesh\\s+sir(?:'s)?\\s+insta|developer(?:'s)?\\s+insta|developer(?:'s)?\\s+instagram|open\\s+mahesh\\s+instagram).*")) ||
+            clean.matches(Regex(".*(?:mahesh\\s+sir(?:'s)?\\s+insta|developer(?:'s)?\\s+insta|developer(?:'s)?\\s+instagram|open\\s+mahesh\\s+instagram|avara\\s+inst|inst\\s+id).*")) ||
             clean.matches(Regex(".*@?_mahesh_356.*"))
         ) {
             return ParsedCommandResult(JarvisCommand.OpenInstagramProfile("_mahesh_356"), 1.0f, "OPEN_MAHESH_INSTAGRAM")
+        }
+
+        // 2d. Battery Status Commands (Kannada & English)
+        if (clean.matches(Regex(".*(?:battery|battery\\s+percentage|battery\\s+status|battery\\s+estide|battery\\s+estu|phone\\s+battery|charge\\s+estide|charge\\s+percentage|phone\\s+charge|battery\\s+kitni\\s+hai).*"))) {
+            return ParsedCommandResult(JarvisCommand.CheckBattery, 0.98f, "BATTERY_STATUS")
+        }
+
+        // 2e. Morning / Day Briefing Commands (Kannada & English)
+        if (clean.matches(Regex(".*(?:good\\s+morning|subhodaya|shubhodaya|morning\\s+briefing|day\\s+update|ivattina\\s+update|today(?:'s)?\\s+update|day\\s+briefing|how(?:'s|\\s+is)\\s+my\\s+day).*"))) {
+            return ParsedCommandResult(JarvisCommand.MorningBriefing, 0.98f, "MORNING_BRIEFING")
+        }
+
+        // 2f. Drive Mode Commands
+        if (clean.matches(Regex(".*(?:drive\\s+mode\\s+on|driving\\s+mode\\s+on|car\\s+mode\\s+on|drive\\s+mode\\s+chalu|start\\s+driving\\s+mode).*"))) {
+            return ParsedCommandResult(JarvisCommand.ToggleDriveMode(true), 0.98f, "DRIVE_MODE_ON")
+        }
+        if (clean.matches(Regex(".*(?:drive\\s+mode\\s+off|driving\\s+mode\\s+off|car\\s+mode\\s+off|drive\\s+mode\\s+band|stop\\s+driving\\s+mode).*"))) {
+            return ParsedCommandResult(JarvisCommand.ToggleDriveMode(false), 0.98f, "DRIVE_MODE_OFF")
+        }
+
+        // 2g. Camera Vision / Scan Commands
+        if (clean.matches(Regex(".*(?:open\\s+camera|scan\\s+camera|camera\\s+scan|camera\\s+open|photo\\s+tegi|take\\s+photo|look\\s+at\\s+this|scan\\s+this|visual\\s+scan).*"))) {
+            return ParsedCommandResult(JarvisCommand.ScanCamera("general"), 0.98f, "CAMERA_SCAN")
         }
 
         // 3. Flashlight / Torch Commands (Strict Anchoring & Natural Variations across Indian languages)
